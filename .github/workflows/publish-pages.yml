@@ -1,0 +1,60 @@
+name: Publish Charts to GitHub Pages
+
+on:
+  workflow_run:
+    workflows: ["CI - Keyword Analysis"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download CI artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: charts-and-csvs
+          path: site_src
+        continue-on-error: true
+
+      - name: Prepare site (build index.html)
+        run: |
+          mkdir -p site
+          echo "<!doctype html><html><head><meta charset=\"utf-8\"><title>Amazon Keyword Insights</title></head><body>" > site/index.html
+          echo "<h1>Amazon Keyword Insights</h1>" >> site/index.html
+          echo "<p>Charts and outputs published from CI.</p>" >> site/index.html
+          if [ -d site_src ]; then
+            mkdir -p site/charts
+            cp -r site_src/* site/charts/ || true
+            echo "<h2>Charts</h2><ul>" >> site/index.html
+            find site/charts -maxdepth 1 -type f | sort | while read f; do
+              fn=$(basename "$f")
+              echo "<li><a href=\"charts/$fn\">$fn</a></li>" >> site/index.html
+            done
+            echo "</ul>" >> site/index.html
+          else
+            echo "<p><em>No artifact found. Push a CSV into <code>data/</code> and re-run CI.</em></p>" >> site/index.html
+          fi
+          echo "</body></html>" >> site/index.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
