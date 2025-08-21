@@ -11,6 +11,6 @@ See notebooks/01_cerebro_clean_analyze.ipynb
 This repo publishes charts to **GitHub Pages** after CI finishes.
 
 - After you push a CSV into `data/` and CI runs, visit:  
-  `https://<YOUR-USER>.github.io/amazon-keyword-insights/`
+  `https://<YOUR-USER>.github.io/amazon-keyword-insights_full/`
 
 > Replace `<YOUR-USER>` above with your GitHub username. You can change the repo name too; the workflows will still work.
